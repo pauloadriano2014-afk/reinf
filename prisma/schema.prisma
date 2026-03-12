@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  companies Company[]
+}
+
+model Company {
+  id          String       @id @default(uuid())
+  cnpj        String       @unique
+  name        String
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  competences Competence[]
+}
+
+model Competence {
+  id          String       @id @default(uuid())
+  month       Int
+  year        Int
+  companyId   String
+  company     Company      @relation(fields: [companyId], references: [id])
+  createdAt   DateTime     @default(now())
+  invoices    Invoice[]
+  reinfEvents ReinfEvent[]
+  divergences Divergence[]
+
+  @@unique([month, year, companyId])
+}
+
+model Invoice {
+  id                 String       @id @default(uuid())
+  invoiceNumber      String
+  issuerCnpj         String
+  providerCnpj       String
+  serviceCode        String?
+  serviceValue       Float
+  retentionValue     Float
+  competenceId       String
+  competence         Competence   @relation(fields: [competenceId], references: [id])
+  createdAt          DateTime     @default(now())
+  divergences        Divergence[]
+}
+
+model ReinfEvent {
+  id               String       @id @default(uuid())
+  eventType        String       // R-2010 ou R-2020
+  cnpj             String
+  invoiceReference String
+  serviceValue     Float
+  retentionValue   Float
+  competenceId     String
+  competence       Competence   @relation(fields: [competenceId], references: [id])
+  createdAt        DateTime     @default(now())
+}
+
+model Divergence {
+  id                String     @id @default(uuid())
+  status            String     // "WARNING" ou "ERROR"
+  errorMessage      String
+  expectedRetention Float?
+  reportedRetention Float?
+  invoiceId         String?
+  invoice           Invoice?   @relation(fields: [invoiceId], references: [id])
+  competenceId      String
+  competence        Competence @relation(fields: [competenceId], references: [id])
+  createdAt         DateTime   @default(now())
+}
